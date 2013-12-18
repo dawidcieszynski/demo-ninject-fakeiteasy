@@ -11,19 +11,19 @@ namespace LocalStorage
     /// </summary>
     public class LocalStorageRepository : IStorage
     {
-        private readonly string _storageFileName;
+        private readonly string _storageFilePath;
 
-        public LocalStorageRepository(string storageFileName)
+        public LocalStorageRepository(string storageFilePath)
         {
-            _storageFileName = storageFileName;
+            _storageFilePath = storageFilePath;
         }
 
         public void Set(string name, string value)
         {
             var settingsFileContent = string.Empty;
-            if (File.Exists(_storageFileName))
-                settingsFileContent = File.ReadAllText(_storageFileName);
-            var settingsList = JsonConvert.DeserializeObject<List<SettingItem>>(settingsFileContent);
+            if (File.Exists(_storageFilePath))
+                settingsFileContent = File.ReadAllText(_storageFilePath);
+            var settingsList = JsonConvert.DeserializeObject<List<SettingItem>>(settingsFileContent) ?? new List<SettingItem>();
 
             var item = settingsList.FirstOrDefault(s => s.Name == name);
             if (item == null)
@@ -31,14 +31,18 @@ namespace LocalStorage
             else
                 item.Value = value;
 
-            File.WriteAllText(_storageFileName, JsonConvert.SerializeObject(settingsList));
+            var dir = Path.GetDirectoryName(_storageFilePath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            File.WriteAllText(_storageFilePath, JsonConvert.SerializeObject(settingsList));
         }
 
         public string Get(string name)
         {
             var content = string.Empty;
-            if (File.Exists(_storageFileName))
-                content = File.ReadAllText(_storageFileName);
+            if (File.Exists(_storageFilePath))
+                content = File.ReadAllText(_storageFilePath);
             var deserialized = JsonConvert.DeserializeObject<List<SettingItem>>(content) ?? new List<SettingItem>();
             return deserialized.Where(s => s.Name == name).Select(s => s.Value).FirstOrDefault();
         }
